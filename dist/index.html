@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="folio — a quiet markdown viewer with the outline kept in the margin." />
+    <meta name="theme-color" content="#ecede6" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style type="text/tailwindcss" id="doc-style"></style>
+    <script>
+      (function () {
+        try {
+          var style = localStorage.getItem("folio-doc-style");
+          if (style) document.getElementById("doc-style").textContent = style;
+        } catch (e) {}
+      })();
+    </script>
+    <title>folio — markdown viewer</title>
+    <script>
+      // Apply the stored theme and custom theme before first paint.
+      (function () {
+        try {
+          var stored = localStorage.getItem("folio-theme");
+          var dark = stored
+            ? stored === "dark"
+            : window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (dark) document.documentElement.classList.add("dark");
+        } catch (e) {}
+      })();
+    </script>
+    <script type="module" crossorigin src="/assets/index-Dne_xp6r.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DAiWAShY.css">
+  </head>
+  <body>
+    <div id="app" class="app-shell flex h-dvh flex-col" data-view="read">
+      <header class="toolbar">
+        <a class="wordmark" href="./" aria-label="folio home">folio<span class="mark">.</span></a>
+        <span class="toolbar-rule" aria-hidden="true"></span>
+        <span class="filename">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z" />
+            <path d="M14 3v5h5M9 13h6M9 17h4" />
+          </svg>
+          <span id="file-name">untitled.md</span>
+        </span>
+
+        <div class="toolbar-actions">
+          <div class="seg" role="group" aria-label="View mode">
+            <button class="seg-btn" type="button" data-view-btn="read" aria-pressed="true">Read</button>
+            <button class="seg-btn" type="button" data-view-btn="split" aria-pressed="false">Split</button>
+          </div>
+
+          <button id="open-btn" class="tool-btn has-label" type="button" title="Open a markdown file (Ctrl+O)" aria-label="Open a markdown file">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z" />
+            </svg>
+            <span class="btn-label">Open</span>
+          </button>
+          <input id="file-input" type="file" accept=".md,.markdown,.mdown,.mdx,.txt,text/markdown,text/plain" hidden />
+
+          <button id="export-btn" class="tool-btn has-label" type="button" title="Export to PDF" aria-label="Export to PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M12 3v11m0 0 4-4m-4 4-4-4" />
+              <path d="M5 19h14" />
+            </svg>
+            <span class="btn-label">Export PDF</span>
+          </button>
+
+          <button id="print-btn" class="tool-btn icon-only print-btn" type="button" aria-label="Print or save as PDF" title="Print / save a text-based PDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M7 8V3h10v5" />
+              <path d="M7 17H5a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+              <path d="M7 14h10v7H7z" />
+            </svg>
+          </button>
+
+          <button id="customize-btn" class="tool-btn icon-only" type="button" aria-label="Customize appearance" title="Customize appearance" aria-expanded="false" aria-controls="customizer">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+              <path d="M4 7h9M19 7h1M4 17h4M14 17h6" />
+              <circle cx="15.5" cy="7" r="2.2" />
+              <circle cx="10" cy="17" r="2.2" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="app-grid">
+        <aside id="rail" class="rail" aria-label="Document outline">
+          <div class="rail-head">
+            <span class="rail-label">Contents</span>
+          </div>
+          <nav id="outline" class="outline"></nav>
+        </aside>
+
+        <section id="editor-pane" class="editor-pane" aria-label="Markdown source">
+          <div class="editor-head">
+            <span>Markdown source</span>
+          </div>
+          <textarea id="source" spellcheck="true" aria-label="Markdown source" placeholder="Paste or write markdown here…"></textarea>
+        </section>
+
+        <main id="preview-pane" class="preview">
+          <div class="progress-track" aria-hidden="true"><span id="progress-bar"></span></div>
+          <article id="doc" class="md-body"></article>
+        </main>
+      </div>
+
+      <footer class="statusbar">
+        <span>
+          <span id="stat-words">0 words</span>
+          <span class="sep" aria-hidden="true">·</span>
+          <span id="stat-time">0 min read</span>
+        </span>
+        <span class="status-hint">Drop a .md file anywhere</span>
+      </footer>
+    </div>
+
+    <aside id="customizer" class="customizer" aria-label="Customize appearance" aria-hidden="true" inert>
+      <header class="customizer-head">
+        <h2 class="customizer-title">Customize</h2>
+        <button id="customize-close" class="cz-close" type="button" aria-label="Close customization">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        </button>
+      </header>
+
+            <div class="customizer-body">
+        <section class="cz-section">
+          <div class="cz-section-head">
+            <span class="cz-label">Theme</span>
+          </div>
+          <div class="seg cz-theme" role="group" aria-label="Color theme">
+            <button class="seg-btn" type="button" data-theme-btn="light" aria-pressed="true">Light</button>
+            <button class="seg-btn" type="button" data-theme-btn="dark" aria-pressed="false">Dark</button>
+          </div>
+        </section>
+
+        <section class="cz-section">
+          <div class="cz-section-head">
+            <span class="cz-label">Markdown style</span>
+            <span class="cz-actions">
+              <button class="cz-link" id="print-pdf" type="button" title="Print or save a text-based PDF">Print</button>
+              <button class="cz-link" id="copy-doc-style" type="button">Copy</button>
+              <button class="cz-link" id="reset-doc-style" type="button">Reset</button>
+            </span>
+          </div>
+          <textarea id="doc-style-editor" class="cz-code" spellcheck="false" aria-label="Markdown Tailwind CSS"></textarea>
+          <p class="cz-hint">Live Tailwind CSS for the markdown page. Changes apply immediately to the preview and to the PDF. Print uses the browser's HTML-to-PDF engine (exact, selectable text).</p>
+        </section>
+      </div>
+
+    </aside>
+
+    <div id="export-overlay" class="export-overlay" role="status" aria-live="polite" hidden>
+      <div class="export-card">
+        <span class="export-spinner" aria-hidden="true"></span>
+        <p>Preparing PDF…</p>
+      </div>
+    </div>
+
+    <div class="drop-overlay" aria-hidden="true">
+      <div class="drop-frame">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+          <path d="M12 16V4m0 0-4 4m4-4 4 4" />
+          <path d="M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3" />
+        </svg>
+        <p class="drop-title">Drop a markdown file</p>
+        <p class="drop-copy">It opens in the page right away. Nothing leaves your computer.</p>
+      </div>
+    </div>
+
+  </body>
+</html>
