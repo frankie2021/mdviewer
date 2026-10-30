@@ -9,24 +9,37 @@ npm install
 npm run dev
 ```
 
-Open the printed URL (http://localhost:5173). `npm run build` writes a static bundle to `dist/` that can be hosted anywhere.
+Open the printed URL (http://localhost:5173). `npm run build` writes a static bundle to `dist/` that can be hosted anywhere; `npm run preview` serves that build.
 
 ## What it does
 
-- Renders GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks
-- Margin rail with the document outline; ticks widen by heading level and the current one is marked as you read
-- Read or Split view — edit the source and watch the page update
+- Renders GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks, fenced code with syntax highlighting
+- Margin rail with the document outline; ticks widen by heading level and the current heading is marked as you scroll
+- Read or Split view — edit the source on the left, watch the page on the right
 - Open a file with the button or **Ctrl/Cmd + O**; drop a `.md` file anywhere on the page
-- **Export PDF** — builds and downloads a PDF directly, without a print dialog. The PDF is captured from the rendered page, so it matches the on-screen style: fonts, table borders and padding, code blocks, checkboxes, colours, and your custom CSS block. It is an image-based PDF, so text is not selectable.
-- **Live markdown style editor** — the Customize panel contains one editable Tailwind CSS block that styles the markdown page. Change text sizes, table borders, cell padding, fonts, headings, code — the preview and the PDF update as you type.
 - Light and dark themes, remembered between visits and seeded from your OS preference
 - HTML in markdown is sanitised with DOMPurify
 
-Keyboard: **Ctrl/Cmd + O** opens a file, **Ctrl/Cmd + E** toggles Split view, **Esc** closes the customizer. Ctrl/Cmd + P still prints the page.
+Keyboard: **Ctrl/Cmd + O** opens a file, **Ctrl/Cmd + E** toggles Split view, **Esc** closes the Customize panel.
+
+## Exporting a PDF
+
+There are two ways out, because a browser cannot silently generate a text-based PDF on its own.
+
+| | **Export PDF** (toolbar, download icon) | **Print** (printer icon, or the Print link in Customize) |
+|---|---|---|
+| Dialog | None — the file downloads | Browser print preview, then **Save as PDF** |
+| Built with | `html2pdf.js` — the rendered page is rasterised | The browser's own HTML → PDF engine |
+| Text | An image; not selectable or searchable | Real text, selectable and searchable |
+| Styling | Matches the screen exactly, including your style block | Uses the `@media print` stylesheet in `src/style.css` |
+
+The direct exporter captures the document at its reading width (46rem minus padding), so exporting from Split view gives the same layout as Read view. Exporting from dark mode produces a light PDF: the page briefly switches to the light theme while it is captured so the background and margins match.
+
+Notes on the direct export: images render when the browser is allowed to draw them (local/data images, and remote images that send CORS headers); other images fall back to their alt text. Task-list checkboxes are redrawn as plain elements before capture because `html2canvas` cannot parse `<input>` styling.
 
 ## The markdown style block
 
-The Customize button (sliders, top right) opens the panel. It has a Light/Dark switch and the full Tailwind CSS block that styles `.md-body`. It is compiled in the browser with `@tailwindcss/browser`, so `@theme`, `@apply`, arbitrary values, and plain CSS all work live.
+The Customize button (sliders, top right) opens the panel. Alongside the Light/Dark switch is the full Tailwind CSS block that styles `.md-body`. It is compiled in the browser with `@tailwindcss/browser`, so `@theme`, `@apply`, arbitrary values, and plain CSS all work live — the preview re-renders as you type.
 
 The default block starts with the values you are most likely to change:
 
@@ -50,20 +63,28 @@ The default block starts with the values you are most likely to change:
 }
 ```
 
-Edit the numbers or the component rules directly. "Reset" restores the default block. "Copy" copies a standalone version of the block, with `@import "tailwindcss"` and the colour palette added, ready for a Tailwind v4 project. The same standalone stylesheet is generated as [`tailwind-theme.css`](tailwind-theme.css) with:
+Edit the numbers or the component rules directly. **Reset** restores the default block. **Copy** copies a standalone version — `@import "tailwindcss"` plus the colour palette plus your block — ready to paste into a Tailwind v4 project. The same standalone stylesheet is written to [`tailwind-theme.css`](tailwind-theme.css) with:
 
 ```bash
 npm run theme
 ```
 
-Colour tokens (`--paper`, `--surface`, `--ink`, `--mute`, `--line`, `--accent`, `--code-bg`, `--code-mute`) come from the viewer's light/dark theme, so the block works in both modes without duplicating colours. The default values live in [`src/style.css`](src/style.css); the editable block is in [`src/document-style.js`](src/document-style.js).
+Colour tokens (`--paper`, `--surface`, `--ink`, `--mute`, `--line`, `--accent`, `--code-bg`, `--code-mute`) come from the viewer's light/dark theme, so one block serves both modes without duplicating colours.
 
-## Export PDF notes
+## Where things live
 
-- The PDF is produced from the rendered document (`html2pdf.js`), which is why it matches the screen exactly, including your style block.
-- Because it is a raster capture, text in the PDF is not selectable or searchable. If you need selectable text, use Ctrl/Cmd + P and "Save as PDF"; the print stylesheet produces a light, text-based page.
-- Images are captured when the browser can draw them (local/data images, and remote images that allow CORS). Other images appear as their alt text.
-- Exporting from dark mode produces a light PDF (the page temporarily switches to the light theme so the margins and page background match).
+| Path | What it is |
+|---|---|
+| `index.html` | App shell: toolbar, rail, editor, preview, Customize panel |
+| `src/main.js` | Rendering, outline and scroll-spy, views, drag and drop, theme, export wiring, keyboard |
+| `src/style.css` | Viewer chrome, palette, syntax colours, and the `@media print` stylesheet |
+| `src/document-style.js` | The default markdown style block and the standalone export of it |
+| `src/pdf.js` | Direct PDF export (`html2pdf.js` capture and download) |
+| `scripts/generate-theme.mjs` | Writes `tailwind-theme.css` from the default block |
+| `tailwind-theme.css` | Generated standalone stylesheet — do not edit by hand |
+| `public/` | Static assets (favicon) |
+
+Saved preferences use three localStorage keys: `folio-theme` (light/dark), `folio-view` (read/split), and `folio-doc-style` (your style block). The theme and style block are applied before first paint, so there is no flash on reload.
 
 ## Typefaces
 
