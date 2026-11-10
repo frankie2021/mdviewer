@@ -52,6 +52,9 @@ const copyDocStyleBtn = document.getElementById("copy-doc-style");
 const resetDocStyleBtn = document.getElementById("reset-doc-style");
 const printPdfBtn = document.getElementById("print-pdf");
 const printBtn = document.getElementById("print-btn");
+const exportProgressBtn = document.getElementById("export-progress");
+const importProgressBtn = document.getElementById("import-progress");
+const progressInput = document.getElementById("progress-input");
 
 const UNTITLED_NAME = "untitled.md";
 const WORDS_PER_MINUTE = 220;
@@ -344,6 +347,7 @@ function updateProgress() {
 let scrollFrame = 0;
 previewPane.addEventListener("scroll", () => {
   updateProgress();
+  saveSession();
   if (scrollFrame) return;
   scrollFrame = requestAnimationFrame(() => {
     scrollFrame = 0;
@@ -378,7 +382,132 @@ function setDocument(text, name, { resetScroll = true } = {}) {
   fileNameEl.textContent = name;
   document.title = `${name} — folio`;
   render(text, { resetScroll });
+  saveSession();
 }
+
+/* ------------------------------------------------------------------ */
+/* Session — the page and reading position survive a reload            */
+/* ------------------------------------------------------------------ */
+
+const DOC_KEY = "folio-doc";
+const DOC_NAME_KEY = "folio-doc-name";
+const DOC_SCROLL_KEY = "folio-doc-scroll";
+
+function scrollRatio() {
+  const max = previewPane.scrollHeight - previewPane.clientHeight;
+  return max > 0 ? Math.min(1, Math.max(0, previewPane.scrollTop / max)) : 0;
+}
+
+function restoreScroll(ratio) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const max = previewPane.scrollHeight - previewPane.clientHeight;
+      if (max > 0) previewPane.scrollTop = max * Math.min(1, Math.max(0, ratio));
+    });
+  });
+}
+
+function writeSession() {
+  storage.set(DOC_KEY, sourceEl.value);
+  storage.set(DOC_NAME_KEY, fileNameEl.textContent);
+  storage.set(DOC_SCROLL_KEY, scrollRatio().toFixed(4));
+}
+
+let sessionTimer = 0;
+function saveSession() {
+  clearTimeout(sessionTimer);
+  sessionTimer = setTimeout(writeSession, 350);
+}
+
+// Closing the tab mid-keystroke should not lose the last edit.
+window.addEventListener("pagehide", () => {
+  clearTimeout(sessionTimer);
+  writeSession();
+});
+
+function buildProgress() {
+  return {
+    app: "folio",
+    version: 1,
+    savedAt: new Date().toISOString(),
+    document: {
+      name: fileNameEl.textContent,
+      source: sourceEl.value,
+      scroll: Number(scrollRatio().toFixed(4)),
+    },
+    settings: {
+      view: app.dataset.view === "split" ? "split" : "read",
+      theme: document.documentElement.classList.contains("dark") ? "dark" : "light",
+      docStyle: docStyleEditor.value,
+    },
+  };
+}
+
+function flashButton(button, message) {
+  const label = button.querySelector(".cz-button-label");
+  if (!label) return;
+  const original = label.textContent;
+  label.textContent = message;
+  clearTimeout(button._flashTimer);
+  button._flashTimer = setTimeout(() => {
+    label.textContent = original;
+  }, 1600);
+}
+
+exportProgressBtn.addEventListener("click", () => {
+  const data = buildProgress();
+  const stem = (data.document.name || "untitled").replace(/\.[^.]+$/, "") || "untitled";
+  const blob = new Blob([`${JSON.stringify(data, null, 2)}\n`], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `${stem}-progress.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  flashButton(exportProgressBtn, "Exported");
+  flashStatus("Progress exported.");
+});
+
+importProgressBtn.addEventListener("click", () => progressInput.click());
+
+progressInput.addEventListener("change", async () => {
+  const file = progressInput.files?.[0];
+  progressInput.value = "";
+  if (!file) return;
+
+  try {
+    const data = JSON.parse(await file.text());
+    const source = data?.document?.source;
+    if (typeof source !== "string") throw new Error("Not a folio progress file.");
+
+    const rawName = data.document.name;
+    const name = typeof rawName === "string" && rawName.trim() ? rawName : UNTITLED_NAME;
+    setDocument(source, name);
+
+    const settings = data.settings ?? {};
+    if (settings.view === "split" || settings.view === "read") setView(settings.view);
+    if (settings.theme === "dark" || settings.theme === "light") {
+      storage.set("folio-theme", settings.theme);
+      setTheme(settings.theme);
+    }
+    if (typeof settings.docStyle === "string" && settings.docStyle.trim()) {
+      docStyle = settings.docStyle;
+      docStyleEditor.value = docStyle;
+      applyDocStyle(docStyle);
+    }
+
+    const scroll = Number(data.document.scroll);
+    if (Number.isFinite(scroll) && scroll > 0) restoreScroll(scroll);
+
+    flashButton(importProgressBtn, "Imported");
+    flashStatus(`Imported ${name}.`);
+  } catch {
+    flashButton(importProgressBtn, "Invalid file");
+    flashStatus("That file is not a folio progress file.");
+  }
+});
 
 function isTextFile(file) {
   return /\.(md|markdown|mdown|mdx|txt)$/i.test(file.name) || file.type.startsWith("text/");
@@ -419,7 +548,10 @@ fileInput.addEventListener("change", () => {
 let inputTimer = 0;
 sourceEl.addEventListener("input", () => {
   clearTimeout(inputTimer);
-  inputTimer = setTimeout(() => render(sourceEl.value), 60);
+  inputTimer = setTimeout(() => {
+    render(sourceEl.value);
+    saveSession();
+  }, 60);
 });
 
 /* ------------------------------------------------------------------ */
@@ -739,7 +871,19 @@ window.addEventListener("keydown", (event) => {
 /* Start                                                               */
 /* ------------------------------------------------------------------ */
 
-setDocument("", UNTITLED_NAME);
+const savedSource = storage.get(DOC_KEY);
+const savedName = storage.get(DOC_NAME_KEY);
+const savedScroll = Number.parseFloat(storage.get(DOC_SCROLL_KEY) ?? "0");
+
+setDocument(
+  savedSource ?? "",
+  savedSource === null ? UNTITLED_NAME : savedName || UNTITLED_NAME,
+  { resetScroll: savedSource === null },
+);
+
+if (savedSource && Number.isFinite(savedScroll) && savedScroll > 0) {
+  restoreScroll(savedScroll);
+}
 
 doc.classList.add("is-entering");
 doc.addEventListener(

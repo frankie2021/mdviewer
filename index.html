@@ -147,6 +147,30 @@
 
         <section class="cz-section">
           <div class="cz-section-head">
+            <span class="cz-label">Progress</span>
+          </div>
+          <p class="cz-note">Your page, reading position and settings save automatically in this browser. Export a copy as a file, or import one from another computer.</p>
+          <div class="cz-button-row">
+            <button class="cz-button" id="export-progress" type="button" title="Download your page and settings as a file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 4v11m0 0 4-4m-4 4-4-4" />
+                <path d="M5 19h14" />
+              </svg>
+              <span class="cz-button-label">Export file</span>
+            </button>
+            <button class="cz-button" id="import-progress" type="button" title="Restore a page and settings from a file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                <path d="M12 15V4m0 0L8 8m4-4 4 4" />
+                <path d="M5 19h14" />
+              </svg>
+              <span class="cz-button-label">Import file</span>
+            </button>
+          </div>
+          <input id="progress-input" type="file" accept=".json,application/json" hidden />
+        </section>
+
+        <section class="cz-section">
+          <div class="cz-section-head">
             <span class="cz-label">Markdown style</span>
             <span class="cz-actions">
               <button class="cz-link" id="print-pdf" type="button" title="Print or save a text-based PDF">Print</button>

@@ -18,6 +18,7 @@ On Windows you can skip the terminal entirely: double-click [`start.bat`](start.
 - Renders GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks, fenced code with syntax highlighting
 - Margin rail with the document outline; ticks widen by heading level and the current heading is marked as you scroll
 - Read or Split view — edit the source on the left, watch the page on the right
+- **Your progress is kept** — the page, reading position, theme and style are saved as you type, and can be exported to a file and imported again
 - Open a file with the button or **Ctrl/Cmd + O**; drop a `.md` file anywhere on the page
 - Light and dark themes, remembered between visits and seeded from your OS preference
 - HTML in markdown is sanitised with DOMPurify
@@ -73,6 +74,26 @@ npm run theme
 
 Colour tokens (`--paper`, `--surface`, `--ink`, `--mute`, `--line`, `--accent`, `--code-bg`, `--code-mute`) come from the viewer's light/dark theme, so one block serves both modes without duplicating colours.
 
+## Your progress
+
+The page you are working on is saved as you type, together with its file name, your reading position, and the settings (theme, view, style block). Reload — or close the tab and come back — and you land exactly where you left off.
+
+It is stored in this browser's localStorage. Cookies are not used: browsers cap them at about 4 KB and send them with every request, so they cannot hold a document.
+
+**Export** and **Import** are the two buttons in the Customize panel, under Progress. Export downloads a `*-progress.json` file:
+
+```json
+{
+  "app": "folio",
+  "version": 1,
+  "savedAt": "2026-11-10T08:00:00.000Z",
+  "document": { "name": "notes.md", "source": "# …", "scroll": 0.42 },
+  "settings": { "view": "split", "theme": "light", "docStyle": "…" }
+}
+```
+
+Import reads that file back and restores the page, its reading position and the settings. Clearing the editor clears the saved page too.
+
 ## Where things live
 
 | Path | What it is |
@@ -86,7 +107,7 @@ Colour tokens (`--paper`, `--surface`, `--ink`, `--mute`, `--line`, `--accent`, 
 | `tailwind-theme.css` | Generated standalone stylesheet — do not edit by hand |
 | `public/` | Static assets (favicon) |
 
-Saved preferences use three localStorage keys: `folio-theme` (light/dark), `folio-view` (read/split), and `folio-doc-style` (your style block). The theme and style block are applied before first paint, so there is no flash on reload.
+Six localStorage keys hold the session: `folio-doc` and `folio-doc-name` (the page), `folio-doc-scroll` (reading position), plus `folio-theme` (light/dark), `folio-view` (read/split) and `folio-doc-style` (your style block). The theme and style block are applied before first paint, so there is no flash on reload.
 
 ## Typefaces
 
