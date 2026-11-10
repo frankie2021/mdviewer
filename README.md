@@ -11,6 +11,8 @@ npm run dev
 
 Open the printed URL (http://localhost:5173). `npm run build` writes a static bundle to `dist/` that can be hosted anywhere; `npm run preview` serves that build.
 
+On Windows you can skip the terminal entirely: double-click [`start.bat`](start.bat). It checks for Node.js, installs dependencies the first time, starts the dev server, and opens the app in your browser.
+
 ## What it does
 
 - Renders GitHub-flavoured markdown: tables, task lists, strikethrough, autolinks, fenced code with syntax highlighting

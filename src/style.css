@@ -1,3 +1,8 @@
+@import "@fontsource-variable/instrument-sans/wght.css";
+@import "@fontsource-variable/instrument-sans/wght-italic.css";
+@import "@fontsource-variable/jetbrains-mono/wght.css";
+@import "@fontsource-variable/jetbrains-mono/wght-italic.css";
+
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -111,6 +116,20 @@
     font-size: 16px;
     line-height: 1.7;
     color: var(--ink);
+  }
+
+  /* The blank-page placeholder, so its first frame matches the compiled block. */
+  .md-body .doc-empty-title {
+    margin: 0 0 0.4em;
+    font-size: 1.75em;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .md-body .doc-empty-copy {
+    margin: 0;
+    max-width: 26rem;
+    color: var(--mute);
   }
 
   ::selection {
